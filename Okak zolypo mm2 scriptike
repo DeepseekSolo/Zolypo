@@ -1,0 +1,578 @@
+-- Murder Mystery 2 ESP - Готовый скрипт для loadstring
+-- Загрузите этот код на pastebin.com или другой хостинг
+
+loadstring([[
+--[[
+    Murder Mystery 2 ESP - РАСШИРЕННАЯ ВЕРСИЯ
+    - Меню с шестеренкой
+    - Два режима: Show Names и Highlights
+    - Комбинированный режим
+]]
+
+local Library = {}
+local CurrentTab = "Visuals"
+local ESPEnabled = false
+local GameActive = false
+local ShowNames = true
+local ShowHighlights = false
+local SettingsOpen = false
+
+-- Создание GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "MM2Menu"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = game:GetService("CoreGui")
+
+-- Основное меню
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 300, 0, 400)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BackgroundTransparency = 0.15
+MainFrame.BorderSizePixel = 2
+MainFrame.BorderColor3 = Color3.fromRGB(0, 150, 255)
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+-- Панель настроек (выдвижная)
+local SettingsFrame = Instance.new("Frame")
+SettingsFrame.Name = "SettingsFrame"
+SettingsFrame.Size = UDim2.new(0, 200, 1, 0)
+SettingsFrame.Position = UDim2.new(0, -200, 0, 0)
+SettingsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+SettingsFrame.BackgroundTransparency = 0.15
+SettingsFrame.BorderSizePixel = 2
+SettingsFrame.BorderColor3 = Color3.fromRGB(0, 150, 255)
+SettingsFrame.Visible = false
+SettingsFrame.Parent = MainFrame
+
+-- Заголовок настроек
+local SettingsTitle = Instance.new("TextLabel")
+SettingsTitle.Name = "SettingsTitle"
+SettingsTitle.Size = UDim2.new(1, 0, 0, 30)
+SettingsTitle.Position = UDim2.new(0, 0, 0, 0)
+SettingsTitle.BackgroundTransparency = 1
+SettingsTitle.Text = "ESP Settings"
+SettingsTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+SettingsTitle.TextScaled = true
+SettingsTitle.Font = Enum.Font.GothamBold
+SettingsTitle.Parent = SettingsFrame
+
+-- Контейнер для настроек
+local SettingsContent = Instance.new("Frame")
+SettingsContent.Name = "SettingsContent"
+SettingsContent.Size = UDim2.new(1, -20, 1, -40)
+SettingsContent.Position = UDim2.new(0, 10, 0, 40)
+SettingsContent.BackgroundTransparency = 1
+SettingsContent.Parent = SettingsFrame
+
+-- Кнопка Show Names
+local ShowNamesButton = Instance.new("TextButton")
+ShowNamesButton.Name = "ShowNamesButton"
+ShowNamesButton.Size = UDim2.new(1, 0, 0, 40)
+ShowNamesButton.Position = UDim2.new(0, 0, 0, 0)
+ShowNamesButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+ShowNamesButton.BackgroundTransparency = 0.3
+ShowNamesButton.BorderSizePixel = 1
+ShowNamesButton.BorderColor3 = Color3.fromRGB(0, 255, 0)
+ShowNamesButton.Text = "Show Names: ON"
+ShowNamesButton.TextColor3 = Color3.fromRGB(100, 255, 100)
+ShowNamesButton.TextScaled = true
+ShowNamesButton.Font = Enum.Font.Gotham
+ShowNamesButton.Parent = SettingsContent
+
+-- Кнопка Highlights
+local HighlightsButton = Instance.new("TextButton")
+HighlightsButton.Name = "HighlightsButton"
+HighlightsButton.Size = UDim2.new(1, 0, 0, 40)
+HighlightsButton.Position = UDim2.new(0, 0, 0, 50)
+HighlightsButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+HighlightsButton.BackgroundTransparency = 0.3
+HighlightsButton.BorderSizePixel = 1
+HighlightsButton.BorderColor3 = Color3.fromRGB(255, 0, 0)
+HighlightsButton.Text = "Highlights: OFF"
+HighlightsButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+HighlightsButton.TextScaled = true
+HighlightsButton.Font = Enum.Font.Gotham
+HighlightsButton.Parent = SettingsContent
+
+-- Описание режимов
+local SettingsDescription = Instance.new("TextLabel")
+SettingsDescription.Name = "SettingsDescription"
+SettingsDescription.Size = UDim2.new(1, 0, 0, 120)
+SettingsDescription.Position = UDim2.new(0, 0, 0, 100)
+SettingsDescription.BackgroundTransparency = 1
+SettingsDescription.Text = "Show Names - цветные ники\nHighlights - обводка игроков\nМожно включить оба режима\nНики станут белыми"
+SettingsDescription.TextColor3 = Color3.fromRGB(200, 200, 200)
+SettingsDescription.TextScaled = true
+SettingsDescription.TextWrapped = true
+SettingsDescription.Font = Enum.Font.Gotham
+SettingsDescription.Parent = SettingsContent
+
+-- Заголовок
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name = "TitleLabel"
+TitleLabel.Size = UDim2.new(1, 0, 0, 30)
+TitleLabel.Position = UDim2.new(0, 0, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "Murder Mystery 2"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextScaled = true
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.Parent = MainFrame
+
+-- Контейнер для вкладок
+local TabContainer = Instance.new("Frame")
+TabContainer.Name = "TabContainer"
+TabContainer.Size = UDim2.new(1, 0, 0, 40)
+TabContainer.Position = UDim2.new(0, 0, 0, 30)
+TabContainer.BackgroundTransparency = 1
+TabContainer.Parent = MainFrame
+
+-- Кнопка вкладки Visuals
+local VisualsTab = Instance.new("TextButton")
+VisualsTab.Name = "VisualsTab"
+VisualsTab.Size = UDim2.new(0.5, -2, 1, -4)
+VisualsTab.Position = UDim2.new(0, 2, 0, 2)
+VisualsTab.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+VisualsTab.BackgroundTransparency = 0.3
+VisualsTab.BorderSizePixel = 1
+VisualsTab.BorderColor3 = Color3.fromRGB(0, 150, 255)
+VisualsTab.Text = "Visuals"
+VisualsTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+VisualsTab.TextScaled = true
+VisualsTab.Font = Enum.Font.Gotham
+VisualsTab.Parent = TabContainer
+
+-- Пустая вкладка для симметрии
+local EmptyTab = Instance.new("TextButton")
+EmptyTab.Name = "EmptyTab"
+EmptyTab.Size = UDim2.new(0.5, -2, 1, -4)
+EmptyTab.Position = UDim2.new(0.5, 2, 0, 2)
+EmptyTab.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+EmptyTab.BackgroundTransparency = 0.3
+EmptyTab.BorderSizePixel = 1
+EmptyTab.BorderColor3 = Color3.fromRGB(0, 150, 255)
+EmptyTab.Text = ""
+EmptyTab.Parent = TabContainer
+
+-- Контейнер для содержимого вкладок
+local ContentContainer = Instance.new("Frame")
+ContentContainer.Name = "ContentContainer"
+ContentContainer.Size = UDim2.new(1, -10, 1, -90)
+ContentContainer.Position = UDim2.new(0, 5, 0, 80)
+ContentContainer.BackgroundTransparency = 1
+ContentContainer.Parent = MainFrame
+
+-- Содержимое вкладки Visuals
+local VisualsContent = Instance.new("Frame")
+VisualsContent.Name = "VisualsContent"
+VisualsContent.Size = UDim2.new(1, 0, 1, 0)
+VisualsContent.BackgroundTransparency = 1
+VisualsContent.Visible = true
+VisualsContent.Parent = ContentContainer
+
+-- Основная строка с ESP кнопкой и шестеренкой
+local ControlRow = Instance.new("Frame")
+ControlRow.Name = "ControlRow"
+ControlRow.Size = UDim2.new(1, -20, 0, 40)
+ControlRow.Position = UDim2.new(0, 10, 0, 10)
+ControlRow.BackgroundTransparency = 1
+ControlRow.Parent = VisualsContent
+
+-- Кнопка ESP
+local ESPButton = Instance.new("TextButton")
+ESPButton.Name = "ESPButton"
+ESPButton.Size = UDim2.new(0.8, -5, 1, 0)
+ESPButton.Position = UDim2.new(0, 0, 0, 0)
+ESPButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+ESPButton.BackgroundTransparency = 0.3
+ESPButton.BorderSizePixel = 1
+ESPButton.BorderColor3 = Color3.fromRGB(255, 0, 0)
+ESPButton.Text = "ESP: OFF"
+ESPButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+ESPButton.TextScaled = true
+ESPButton.Font = Enum.Font.Gotham
+ESPButton.Parent = ControlRow
+
+-- Кнопка шестеренки (настройки)
+local SettingsButton = Instance.new("TextButton")
+SettingsButton.Name = "SettingsButton"
+SettingsButton.Size = UDim2.new(0.2, -5, 1, 0)
+SettingsButton.Position = UDim2.new(0.8, 10, 0, 0)
+SettingsButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+SettingsButton.BackgroundTransparency = 0.3
+SettingsButton.BorderSizePixel = 1
+SettingsButton.BorderColor3 = Color3.fromRGB(0, 150, 255)
+SettingsButton.Text = "⚙️"
+SettingsButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+SettingsButton.TextScaled = true
+SettingsButton.Font = Enum.Font.Gotham
+SettingsButton.Parent = ControlRow
+
+-- Описание ESP
+local ESPDescription = Instance.new("TextLabel")
+ESPDescription.Name = "ESPDescription"
+ESPDescription.Size = UDim2.new(1, -20, 0, 100)
+ESPDescription.Position = UDim2.new(0, 10, 0, 60)
+ESPDescription.BackgroundTransparency = 1
+ESPDescription.Text = "⚙️ Нажмите на шестеренку для настроек\n\nShow Names - цветные ники (по умолчанию)\nHighlights - обводка игроков"
+ESPDescription.TextColor3 = Color3.fromRGB(200, 200, 200)
+ESPDescription.TextScaled = true
+ESPDescription.TextWrapped = true
+ESPDescription.Font = Enum.Font.Gotham
+ESPDescription.Parent = VisualsContent
+
+-- Функции обновления кнопок
+local function UpdateESPButton()
+    if ESPEnabled then
+        ESPButton.Text = "ESP: ON"
+        ESPButton.TextColor3 = Color3.fromRGB(100, 255, 100)
+        ESPButton.BorderColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        ESPButton.Text = "ESP: OFF"
+        ESPButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+        ESPButton.BorderColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end
+
+local function UpdateSettingsButtons()
+    if ShowNames then
+        ShowNamesButton.Text = "Show Names: ON"
+        ShowNamesButton.TextColor3 = Color3.fromRGB(100, 255, 100)
+        ShowNamesButton.BorderColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        ShowNamesButton.Text = "Show Names: OFF"
+        ShowNamesButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+        ShowNamesButton.BorderColor3 = Color3.fromRGB(255, 0, 0)
+    end
+    
+    if ShowHighlights then
+        HighlightsButton.Text = "Highlights: ON"
+        HighlightsButton.TextColor3 = Color3.fromRGB(100, 255, 100)
+        HighlightsButton.BorderColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        HighlightsButton.Text = "Highlights: OFF"
+        HighlightsButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+        HighlightsButton.BorderColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end
+
+-- Обработчики нажатий
+ESPButton.MouseButton1Click:Connect(function()
+    ESPEnabled = not ESPEnabled
+    UpdateESPButton()
+end)
+
+SettingsButton.MouseButton1Click:Connect(function()
+    SettingsOpen = not SettingsOpen
+    if SettingsOpen then
+        SettingsFrame.Visible = true
+        -- Анимация выезда
+        for i = 0, 200, 10 do
+            SettingsFrame.Position = UDim2.new(0, -200 + i, 0, 0)
+            wait(0.01)
+        end
+        SettingsFrame.Position = UDim2.new(0, 0, 0, 0)
+    else
+        -- Анимация заезда
+        for i = 200, 0, -10 do
+            SettingsFrame.Position = UDim2.new(0, -i, 0, 0)
+            wait(0.01)
+        end
+        SettingsFrame.Visible = false
+        SettingsFrame.Position = UDim2.new(0, -200, 0, 0)
+    end
+end)
+
+ShowNamesButton.MouseButton1Click:Connect(function()
+    ShowNames = not ShowNames
+    UpdateSettingsButtons()
+end)
+
+HighlightsButton.MouseButton1Click:Connect(function()
+    ShowHighlights = not ShowHighlights
+    UpdateSettingsButtons()
+end)
+
+VisualsTab.MouseButton1Click:Connect(function()
+    VisualsTab.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    VisualsContent.Visible = true
+    wait(0.1)
+    VisualsTab.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+end)
+
+-- Функция проверки, активна ли игра
+local function CheckGameActive()
+    for _, player in ipairs(game.Players:GetPlayers()) do
+        if player ~= game.Players.LocalPlayer and player.Character then
+            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid and humanoid.Health > 0 then
+                if #player.Backpack:GetChildren() > 0 or player.Character:FindFirstChildOfClass("Tool") then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+-- Функция для определения роли игрока
+local function GetPlayerRole(player)
+    if not player.Character then return "Innocent" end
+    
+    local character = player.Character
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then return "Dead" end
+    
+    -- Проверка оружия в руках
+    local toolInHand = character:FindFirstChildOfClass("Tool")
+    if toolInHand then
+        local toolName = toolInHand.Name:lower()
+        if toolName:find("knife") or toolName:find("меч") or toolName:find("нож") or toolName:find("sword") then
+            return "Murderer"
+        end
+        if toolName:find("shotgun") or toolName:find("дробовик") or toolName:find("gun") or toolName:find("пистолет") then
+            return "Sheriff"
+        end
+    end
+    
+    -- Проверка инвентаря
+    local backpack = player:FindFirstChildOfClass("Backpack")
+    if backpack then
+        for _, tool in ipairs(backpack:GetChildren()) do
+            if tool:IsA("Tool") then
+                local toolName = tool.Name:lower()
+                if toolName:find("knife") or toolName:find("меч") or toolName:find("нож") or toolName:find("sword") then
+                    return "Murderer"
+                end
+                if toolName:find("shotgun") or toolName:find("дробовик") or toolName:find("gun") or toolName:find("пистолет") then
+                    return "Sheriff"
+                end
+            end
+        end
+    end
+    
+    return "Innocent"
+end
+
+-- Хранилище для Highlight объектов
+local Highlights = {}
+
+-- Функция создания Highlight для игрока
+local function CreateHighlight(player)
+    if Highlights[player] then
+        Highlights[player]:Destroy()
+        Highlights[player] = nil
+    end
+    
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "MM2Highlight_" .. player.Name
+    highlight.FillTransparency = 0.5
+    highlight.OutlineTransparency = 0
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    Highlights[player] = highlight
+    
+    return highlight
+end
+
+-- Функция для создания ESP
+local function CreateESP(player)
+    if player == game.Players.LocalPlayer then return end
+    
+    -- Создаем BillboardGui для имен
+    local espGui = Instance.new("BillboardGui")
+    espGui.Name = "MM2ESP_" .. player.Name
+    espGui.AlwaysOnTop = true
+    espGui.Size = UDim2.new(0, 100, 0, 20)
+    espGui.StudsOffset = Vector3.new(0, 2.5, 0)
+    espGui.Enabled = false
+    
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Name = "NameLabel"
+    nameLabel.Size = UDim2.new(1, 0, 1, 0)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = player.Name
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.TextStrokeTransparency = 0.3
+    nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    nameLabel.TextSize = 14
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.Parent = espGui
+    
+    local lastRole = "Innocent"
+    local currentHighlight = nil
+    
+    local function UpdateESP()
+        -- Проверяем, включен ли ESP и активна ли игра
+        if not ESPEnabled or not GameActive then
+            espGui.Enabled = false
+            if currentHighlight then
+                currentHighlight.Enabled = false
+            end
+            return
+        end
+        
+        if not player.Character then
+            espGui.Enabled = false
+            if currentHighlight then
+                currentHighlight.Enabled = false
+            end
+            return
+        end
+        
+        local character = player.Character
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        local head = character:FindFirstChild("Head")
+        
+        -- Показываем только живых игроков
+        if head and humanoid and humanoid.Health > 0 then
+            -- Определяем роль
+            local role = GetPlayerRole(player)
+            
+            if role ~= "Dead" then
+                -- Управление Highlight
+                if ShowHighlights then
+                    if not currentHighlight then
+                        currentHighlight = CreateHighlight(player)
+                    end
+                    currentHighlight.Parent = character
+                    currentHighlight.Enabled = true
+                    
+                    -- Устанавливаем цвет Highlight в зависимости от роли
+                    if role == "Murderer" then
+                        currentHighlight.FillColor = Color3.fromRGB(255, 0, 0)
+                        currentHighlight.OutlineColor = Color3.fromRGB(255, 100, 100)
+                    elseif role == "Sheriff" then
+                        currentHighlight.FillColor = Color3.fromRGB(0, 0, 255)
+                        currentHighlight.OutlineColor = Color3.fromRGB(100, 100, 255)
+                    elseif role == "Innocent" then
+                        currentHighlight.FillColor = Color3.fromRGB(0, 255, 0)
+                        currentHighlight.OutlineColor = Color3.fromRGB(100, 255, 100)
+                    end
+                else
+                    if currentHighlight then
+                        currentHighlight.Enabled = false
+                    end
+                end
+                
+                -- Управление именами
+                if ShowNames then
+                    espGui.Parent = head
+                    espGui.Enabled = true
+                    
+                    -- Если включены оба режима - ники белые
+                    if ShowHighlights then
+                        nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- Белый
+                    else
+                        -- Иначе цветные в зависимости от роли
+                        if role == "Murderer" then
+                            nameLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+                        elseif role == "Sheriff" then
+                            nameLabel.TextColor3 = Color3.fromRGB(0, 100, 255)
+                        elseif role == "Innocent" then
+                            nameLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+                        end
+                    end
+                    
+                    nameLabel.Text = player.Name
+                else
+                    espGui.Enabled = false
+                end
+            else
+                espGui.Enabled = false
+                if currentHighlight then
+                    currentHighlight.Enabled = false
+                end
+            end
+        else
+            espGui.Enabled = false
+            if currentHighlight then
+                currentHighlight.Enabled = false
+            end
+        end
+    end
+    
+    -- Обновляем при изменении персонажа
+    player.CharacterAdded:Connect(function()
+        task.wait(0.5)
+        if currentHighlight then
+            currentHighlight:Destroy()
+            currentHighlight = nil
+        end
+        UpdateESP()
+    end)
+    
+    -- Обновляем при изменении в инвентаре
+    player.Backpack.ChildAdded:Connect(function()
+        task.wait(0.1)
+        UpdateESP()
+    end)
+    
+    player.Backpack.ChildRemoved:Connect(function()
+        task.wait(0.1)
+        UpdateESP()
+    end)
+    
+    -- Обновляем каждый кадр
+    game:GetService("RunService").RenderStepped:Connect(UpdateESP)
+    
+    -- Очистка при выходе игрока
+    player.AncestryChanged:Connect(function()
+        if not player.Parent then
+            espGui:Destroy()
+            if currentHighlight then
+                currentHighlight:Destroy()
+                Highlights[player] = nil
+            end
+        end
+    end)
+end
+
+-- Мониторинг состояния игры
+game:GetService("RunService").Heartbeat:Connect(function()
+    GameActive = CheckGameActive()
+end)
+
+-- Создание ESP для всех игроков
+for _, player in ipairs(game.Players:GetPlayers()) do
+    if player ~= game.Players.LocalPlayer then
+        task.wait(0.1)
+        CreateESP(player)
+    end
+end
+
+-- Обработка новых игроков
+game.Players.PlayerAdded:Connect(function(player)
+    task.wait(0.5)
+    CreateESP(player)
+end)
+
+-- Кнопка для открытия/закрытия меню
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Name = "ToggleButton"
+ToggleButton.Size = UDim2.new(0, 40, 0, 40)
+ToggleButton.Position = UDim2.new(0, 10, 0, 10)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+ToggleButton.BackgroundTransparency = 0.15
+ToggleButton.BorderSizePixel = 2
+ToggleButton.BorderColor3 = Color3.fromRGB(0, 150, 255)
+ToggleButton.Text = "M"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.TextScaled = true
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.Parent = ScreenGui
+
+ToggleButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+end)
+
+-- Инициализация кнопок
+UpdateESPButton()
+UpdateSettingsButtons()
+
+print("Murder Mystery 2 Script Loaded! Расширенная версия с настройками")
+]])()
