@@ -1,12 +1,10 @@
--- Murder Mystery 2 ESP - Готовый скрипт для loadstring
--- Загрузите этот код на pastebin.com или другой хостинг
+-- Murder Mystery 2 ESP - Исправленная версия с правильной анимацией
 
 loadstring([[
 --[[
-    Murder Mystery 2 ESP - РАСШИРЕННАЯ ВЕРСИЯ
-    - Меню с шестеренкой
-    - Два режима: Show Names и Highlights
-    - Комбинированный режим
+    Murder Mystery 2 ESP - ИСПРАВЛЕННАЯ ВЕРСИЯ
+    - Правильная анимация выезда меню
+    - Меню выезжает слева от главного окна
 ]]
 
 local Library = {}
@@ -37,17 +35,27 @@ MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
 
--- Панель настроек (выдвижная)
+-- Панель настроек (выдвижная) - ИСПРАВЛЕНО
 local SettingsFrame = Instance.new("Frame")
 SettingsFrame.Name = "SettingsFrame"
 SettingsFrame.Size = UDim2.new(0, 200, 1, 0)
-SettingsFrame.Position = UDim2.new(0, -200, 0, 0)
+SettingsFrame.Position = UDim2.new(0, -200, 0, 0) -- Изначально скрыто слева
 SettingsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 SettingsFrame.BackgroundTransparency = 0.15
 SettingsFrame.BorderSizePixel = 2
 SettingsFrame.BorderColor3 = Color3.fromRGB(0, 150, 255)
-SettingsFrame.Visible = false
+SettingsFrame.Visible = true -- Всегда видимо, но скрыто за границей
 SettingsFrame.Parent = MainFrame
+
+-- Затемнение фона для панели настроек (для красоты)
+local SettingsOverlay = Instance.new("Frame")
+SettingsOverlay.Name = "SettingsOverlay"
+SettingsOverlay.Size = UDim2.new(1, 0, 1, 0)
+SettingsOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+SettingsOverlay.BackgroundTransparency = 0.3
+SettingsOverlay.BorderSizePixel = 0
+SettingsOverlay.Visible = false
+SettingsOverlay.Parent = MainFrame
 
 -- Заголовок настроек
 local SettingsTitle = Instance.new("TextLabel")
@@ -249,7 +257,7 @@ local function UpdateSettingsButtons()
         ShowNamesButton.TextColor3 = Color3.fromRGB(255, 100, 100)
         ShowNamesButton.BorderColor3 = Color3.fromRGB(255, 0, 0)
     end
-    
+
     if ShowHighlights then
         HighlightsButton.Text = "Highlights: ON"
         HighlightsButton.TextColor3 = Color3.fromRGB(100, 255, 100)
@@ -261,30 +269,42 @@ local function UpdateSettingsButtons()
     end
 end
 
--- Обработчики нажатий
-ESPButton.MouseButton1Click:Connect(function()
-    ESPEnabled = not ESPEnabled
-    UpdateESPButton()
-end)
-
-SettingsButton.MouseButton1Click:Connect(function()
+-- ИСПРАВЛЕННАЯ функция открытия/закрытия настроек
+local function ToggleSettings()
     SettingsOpen = not SettingsOpen
+    
     if SettingsOpen then
-        SettingsFrame.Visible = true
-        -- Анимация выезда
+        -- Затемнение фона
+        SettingsOverlay.Visible = true
+        -- Анимация выезда СЛЕВА
         for i = 0, 200, 10 do
             SettingsFrame.Position = UDim2.new(0, -200 + i, 0, 0)
             wait(0.01)
         end
         SettingsFrame.Position = UDim2.new(0, 0, 0, 0)
     else
-        -- Анимация заезда
+        -- Анимация заезда ВЛЕВО
         for i = 200, 0, -10 do
             SettingsFrame.Position = UDim2.new(0, -i, 0, 0)
             wait(0.01)
         end
-        SettingsFrame.Visible = false
         SettingsFrame.Position = UDim2.new(0, -200, 0, 0)
+        SettingsOverlay.Visible = false
+    end
+end
+
+-- Обработчики нажатий
+ESPButton.MouseButton1Click:Connect(function()
+    ESPEnabled = not ESPEnabled
+    UpdateESPButton()
+end)
+
+SettingsButton.MouseButton1Click:Connect(ToggleSettings)
+
+-- Клик по затемнению закрывает настройки
+SettingsOverlay.MouseButton1Click:Connect(function()
+    if SettingsOpen then
+        ToggleSettings()
     end
 end)
 
@@ -323,11 +343,11 @@ end
 -- Функция для определения роли игрока
 local function GetPlayerRole(player)
     if not player.Character then return "Innocent" end
-    
+
     local character = player.Character
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     if not humanoid or humanoid.Health <= 0 then return "Dead" end
-    
+
     -- Проверка оружия в руках
     local toolInHand = character:FindFirstChildOfClass("Tool")
     if toolInHand then
@@ -339,7 +359,7 @@ local function GetPlayerRole(player)
             return "Sheriff"
         end
     end
-    
+
     -- Проверка инвентаря
     local backpack = player:FindFirstChildOfClass("Backpack")
     if backpack then
@@ -355,7 +375,7 @@ local function GetPlayerRole(player)
             end
         end
     end
-    
+
     return "Innocent"
 end
 
@@ -368,21 +388,21 @@ local function CreateHighlight(player)
         Highlights[player]:Destroy()
         Highlights[player] = nil
     end
-    
+
     local highlight = Instance.new("Highlight")
     highlight.Name = "MM2Highlight_" .. player.Name
     highlight.FillTransparency = 0.5
     highlight.OutlineTransparency = 0
     highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
     Highlights[player] = highlight
-    
+
     return highlight
 end
 
 -- Функция для создания ESP
 local function CreateESP(player)
     if player == game.Players.LocalPlayer then return end
-    
+
     -- Создаем BillboardGui для имен
     local espGui = Instance.new("BillboardGui")
     espGui.Name = "MM2ESP_" .. player.Name
@@ -390,7 +410,7 @@ local function CreateESP(player)
     espGui.Size = UDim2.new(0, 100, 0, 20)
     espGui.StudsOffset = Vector3.new(0, 2.5, 0)
     espGui.Enabled = false
-    
+
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Name = "NameLabel"
     nameLabel.Size = UDim2.new(1, 0, 1, 0)
@@ -402,10 +422,9 @@ local function CreateESP(player)
     nameLabel.TextSize = 14
     nameLabel.Font = Enum.Font.GothamBold
     nameLabel.Parent = espGui
-    
-    local lastRole = "Innocent"
+
     local currentHighlight = nil
-    
+
     local function UpdateESP()
         -- Проверяем, включен ли ESP и активна ли игра
         if not ESPEnabled or not GameActive then
@@ -415,7 +434,7 @@ local function CreateESP(player)
             end
             return
         end
-        
+
         if not player.Character then
             espGui.Enabled = false
             if currentHighlight then
@@ -423,16 +442,16 @@ local function CreateESP(player)
             end
             return
         end
-        
+
         local character = player.Character
         local humanoid = character:FindFirstChildOfClass("Humanoid")
         local head = character:FindFirstChild("Head")
-        
+
         -- Показываем только живых игроков
         if head and humanoid and humanoid.Health > 0 then
             -- Определяем роль
             local role = GetPlayerRole(player)
-            
+
             if role ~= "Dead" then
                 -- Управление Highlight
                 if ShowHighlights then
@@ -441,7 +460,7 @@ local function CreateESP(player)
                     end
                     currentHighlight.Parent = character
                     currentHighlight.Enabled = true
-                    
+
                     -- Устанавливаем цвет Highlight в зависимости от роли
                     if role == "Murderer" then
                         currentHighlight.FillColor = Color3.fromRGB(255, 0, 0)
@@ -458,12 +477,12 @@ local function CreateESP(player)
                         currentHighlight.Enabled = false
                     end
                 end
-                
+
                 -- Управление именами
                 if ShowNames then
                     espGui.Parent = head
                     espGui.Enabled = true
-                    
+
                     -- Если включены оба режима - ники белые
                     if ShowHighlights then
                         nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- Белый
@@ -477,7 +496,7 @@ local function CreateESP(player)
                             nameLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
                         end
                     end
-                    
+
                     nameLabel.Text = player.Name
                 else
                     espGui.Enabled = false
@@ -495,7 +514,7 @@ local function CreateESP(player)
             end
         end
     end
-    
+
     -- Обновляем при изменении персонажа
     player.CharacterAdded:Connect(function()
         task.wait(0.5)
@@ -505,21 +524,21 @@ local function CreateESP(player)
         end
         UpdateESP()
     end)
-    
+
     -- Обновляем при изменении в инвентаре
     player.Backpack.ChildAdded:Connect(function()
         task.wait(0.1)
         UpdateESP()
     end)
-    
+
     player.Backpack.ChildRemoved:Connect(function()
         task.wait(0.1)
         UpdateESP()
     end)
-    
+
     -- Обновляем каждый кадр
     game:GetService("RunService").RenderStepped:Connect(UpdateESP)
-    
+
     -- Очистка при выходе игрока
     player.AncestryChanged:Connect(function()
         if not player.Parent then
@@ -574,5 +593,5 @@ end)
 UpdateESPButton()
 UpdateSettingsButtons()
 
-print("Murder Mystery 2 Script Loaded! Расширенная версия с настройками")
+print("Murder Mystery 2 Script Loaded! Исправленная версия с правильной анимацией")
 ]])()
